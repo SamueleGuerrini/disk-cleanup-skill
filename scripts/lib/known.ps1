@@ -49,7 +49,9 @@ function Get-KnownLocations {
   foreach ($k in $known.Keys) {
     $entry = $known[$k]
     $p = $entry.Path
-    if (-not $p -or -not (Test-Path -LiteralPath $p)) { continue }
+    # Access-denied on system-owned caches is normal when not elevated. Treat the
+    # path as absent instead of aborting the whole audit.
+    if (-not $p -or -not (Test-Path -LiteralPath $p -ErrorAction SilentlyContinue)) { continue }
 
     $s = Get-TreeStats -Path $p -PhysicalSize:$PhysicalSize
     $level = Get-RiskLevelFast -Path $p
