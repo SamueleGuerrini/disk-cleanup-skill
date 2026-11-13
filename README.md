@@ -78,13 +78,8 @@ cd disk-cleanup
 .\install.ps1
 ```
 
-No checkout? The same script downloads and installs itself:
-
-```powershell
-irm https://raw.githubusercontent.com/SamueleGuerrini/disk-cleanup-skill/main/install.ps1 | iex
-```
-
-It installs `skills\disk-cleanup\` and `commands\clean-disk.md` under
+The repository is private, so you need access to clone it. The script installs
+`skills\disk-cleanup\` and `commands\clean-disk.md` under
 `%USERPROFILE%\.config\opencode`, then verifies both. No admin needed. From a
 checkout it links the checkout, so updates are live; `-Copy` makes a standalone
 copy, `-Force` replaces an existing install, `-Uninstall` removes it.
