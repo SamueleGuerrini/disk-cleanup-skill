@@ -402,6 +402,8 @@ When in doubt: report, ask, wait.
 
 **Agent entry point**
 
+- `install.ps1` — installs the skill and `/clean-disk` into OpenCode
+  (`~/.config/opencode`), then verifies both.
 - `commands/clean-disk.md` — `/clean-disk`: loads this skill in plan mode, checks
   the mode, warns if it is not read-only, then offers audit / scan / plan / verify.
 

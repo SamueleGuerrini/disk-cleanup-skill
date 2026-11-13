@@ -16,6 +16,10 @@ Not a "clean everything" button. It measures, explains, labels risk, and acts on
 on what you explicitly approve — one item at a time. Dry run is the default;
 `-Execute` is required for any change.
 
+> **Built for OpenCode on Windows.** The skill and the `/clean-disk` command target
+> OpenCode V2 on Windows 10/11. Other agents that read `SKILL.md` and run PowerShell
+> may work, but they are untested and not supported.
+
 ## Why
 
 Cleanup goes wrong in ways that are rarely obvious:
@@ -66,26 +70,26 @@ and an exact `-ConfirmPurge`, and refuses if the live target is missing.
 
 ## Quick start
 
-### 1. Install the skill
+### 1. Install
 
 ```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode\skills" | Out-Null
-git clone https://github.com/SamueleGuerrini/disk-cleanup-skill.git `
-  "$env:USERPROFILE\.config\opencode\skills\disk-cleanup"
+git clone https://github.com/SamueleGuerrini/disk-cleanup-skill.git disk-cleanup
+cd disk-cleanup
+.\install.ps1
 ```
 
-No admin needed. OpenCode discovers `~/.config/opencode/skills/*/SKILL.md`
-automatically.
-
-### 2. Install the `/clean-disk` command
+No checkout? The same script downloads and installs itself:
 
 ```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode\commands" | Out-Null
-Copy-Item "$env:USERPROFILE\.config\opencode\skills\disk-cleanup\commands\clean-disk.md" `
-  "$env:USERPROFILE\.config\opencode\commands\"
+irm https://raw.githubusercontent.com/SamueleGuerrini/disk-cleanup-skill/main/install.ps1 | iex
 ```
 
-### 3. Run `/clean-disk`
+It installs `skills\disk-cleanup\` and `commands\clean-disk.md` under
+`%USERPROFILE%\.config\opencode`, then verifies both. No admin needed. From a
+checkout it links the checkout, so updates are live; `-Copy` makes a standalone
+copy, `-Force` replaces an existing install, `-Uninstall` removes it.
+
+### 2. Run `/clean-disk`
 
 ```text
 /clean-disk
@@ -106,7 +110,7 @@ Pass a choice to skip the menu:
 /clean-disk audit C:
 ```
 
-### 4. Approve and execute — only when ready
+### 3. Approve and execute — only when ready
 
 Plan mode cannot move anything. After the audit, switch to a build agent and run
 the transaction from the installed skill:
@@ -147,9 +151,12 @@ cd disk-cleanup
 
 ## Requirements
 
-Windows 10/11 on NTFS (ReFS has limited junction support) · PowerShell 7+ preferred,
-5.1 works for most scripts · no admin for auditing or per-user moves; admin for
-restore points, VSS, and some system cleanup.
+**OpenCode V2 on Windows 10/11** on NTFS (ReFS has limited junction support) ·
+PowerShell 7+ preferred, 5.1 works for most scripts · no admin for auditing or
+per-user moves; admin for restore points, VSS, and some system cleanup.
+
+The PowerShell scripts run on their own, without an agent. The skill and the
+`/clean-disk` command are OpenCode-specific; other agents were not tested.
 
 ## Safety
 
@@ -174,6 +181,7 @@ pwsh -NoProfile -File .\run-tests.ps1
 
 | File | Contents |
 |---|---|
+| `install.ps1` | Installs the skill and `/clean-disk` into OpenCode |
 | `commands/clean-disk.md` | The `/clean-disk` slash command (plan-mode entry point) |
 | `SKILL.md` | Full workflow (also usable as an OpenCode/agent skill) |
 | `references/SAFETY.md` | Path, junction, shell, cloud, ACL/ADS, incident lessons |
