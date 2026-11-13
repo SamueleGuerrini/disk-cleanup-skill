@@ -400,6 +400,11 @@ When in doubt: report, ask, wait.
 
 ## Bundled files
 
+**Agent entry point**
+
+- `commands/clean-disk.md` — `/clean-disk`: loads this skill in plan mode, checks
+  the mode, warns if it is not read-only, then offers audit / scan / plan / verify.
+
 **Workflow and safety**
 
 - `references/SAFETY.md` — path/junction/shell safety checklist and incident lessons.

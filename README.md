@@ -66,27 +66,84 @@ and an exact `-ConfirmPurge`, and refuses if the live target is missing.
 
 ## Quick start
 
+### 1. Install the skill
+
 ```powershell
-git clone https://github.com/SamueleGuerrini/disk-cleanup-skill.git disk-cleanup
-cd disk-cleanup
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode\skills" | Out-Null
+git clone https://github.com/SamueleGuerrini/disk-cleanup-skill.git `
+  "$env:USERPROFILE\.config\opencode\skills\disk-cleanup"
+```
 
-# 1. Audit (read-only) → JSON + HTML
-.\scripts\audit.ps1 -Drive C:
+No admin needed. OpenCode discovers `~/.config/opencode/skills/*/SKILL.md`
+automatically.
 
-# 2. Record and approve one move
+### 2. Install the `/clean-disk` command
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode\commands" | Out-Null
+Copy-Item "$env:USERPROFILE\.config\opencode\skills\disk-cleanup\commands\clean-disk.md" `
+  "$env:USERPROFILE\.config\opencode\commands\"
+```
+
+### 3. Run `/clean-disk`
+
+```text
+/clean-disk
+```
+
+The agent loads the skill, **checks that the session is in plan mode**, and stops
+with a warning if it is not. It then asks which drive to look at and offers:
+
+1. **Audit** — read-only HTML dashboard + JSON
+2. **Quick scan** — junctions, known folders, broken links
+3. **Plan a move** — a folder plus its destination drive
+4. **Verify** — PASS/FAIL for a manifest or existing links
+5. **Explain** — risk levels, the junk map, what is safe to remove
+
+Pass a choice to skip the menu:
+
+```text
+/clean-disk audit C:
+```
+
+### 4. Approve and execute — only when ready
+
+Plan mode cannot move anything. After the audit, switch to a build agent and run
+the transaction from the installed skill:
+
+```powershell
+cd "$env:USERPROFILE\.config\opencode\skills\disk-cleanup"
+```
+
+```powershell
+# record the move, then approve it (SHA-256 bound to the item)
 .\scripts\make-plan.ps1 -Source 'C:\Work\App' -Destination 'D:\Work\App'
 .\scripts\make-plan.ps1 -Source 'C:\Work\App' -Destination 'D:\Work\App' `
     -Approve -ApprovedBy 'Your Name'
+```
 
-# 3. Dry run, then execute
+```powershell
+# dry run first; -Execute is required for any change
 .\scripts\move-and-link.ps1 -PlanPath "$env:USERPROFILE\_AI_Rollback\plan.json" -PlanItemId '<id>'
 .\scripts\move-and-link.ps1 -PlanPath "$env:USERPROFILE\_AI_Rollback\plan.json" -PlanItemId '<id>' -Execute
+```
 
-# 4. Verify
+```powershell
+# mandatory verification
 .\scripts\verify.ps1 -Drive C: -ManifestPath "$env:USERPROFILE\_AI_Rollback\manifest.jsonl"
 ```
 
-Want only a junction/known-folder scan? `.\scripts\scan.ps1 -Drive C:`
+<details>
+<summary><b>No agent? Use the CLI directly</b></summary>
+
+```powershell
+git clone https://github.com/SamueleGuerrini/disk-cleanup-skill.git disk-cleanup
+cd disk-cleanup
+.\scripts\audit.ps1 -Drive C:
+.\scripts\scan.ps1 -Drive C:
+```
+
+</details>
 
 ## Requirements
 
@@ -117,6 +174,7 @@ pwsh -NoProfile -File .\run-tests.ps1
 
 | File | Contents |
 |---|---|
+| `commands/clean-disk.md` | The `/clean-disk` slash command (plan-mode entry point) |
 | `SKILL.md` | Full workflow (also usable as an OpenCode/agent skill) |
 | `references/SAFETY.md` | Path, junction, shell, cloud, ACL/ADS, incident lessons |
 | `references/CLASSIFICATION.md` | Risk mapping, tiers, proposal format |
