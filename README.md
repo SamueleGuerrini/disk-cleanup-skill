@@ -72,14 +72,21 @@ and an exact `-ConfirmPurge`, and refuses if the live target is missing.
 
 ### 1. Install
 
+From a checkout:
+
 ```powershell
 git clone https://github.com/SamueleGuerrini/disk-cleanup-skill.git disk-cleanup
 cd disk-cleanup
 .\install.ps1
 ```
 
-The repository is private, so you need access to clone it. The script installs
-`skills\disk-cleanup\` and `commands\clean-disk.md` under
+Or run the installer directly:
+
+```powershell
+irm https://raw.githubusercontent.com/SamueleGuerrini/disk-cleanup-skill/main/install.ps1 | iex
+```
+
+It installs `skills\disk-cleanup\` and `commands\clean-disk.md` under
 `%USERPROFILE%\.config\opencode`, then verifies both. No admin needed. From a
 checkout it links the checkout, so updates are live; `-Copy` makes a standalone
 copy, `-Force` replaces an existing install, `-Uninstall` removes it.
