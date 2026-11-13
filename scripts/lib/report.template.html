@@ -21,6 +21,12 @@
     --radius: 10px;
   }
   * { box-sizing: border-box; }
+  * { scrollbar-width: thin; scrollbar-color: #3b434d transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #484f58; background-clip: padding-box; }
+  ::-webkit-scrollbar-corner { background: transparent; }
   html, body { margin: 0; padding: 0; }
   body {
     background: var(--bg);
@@ -57,12 +63,14 @@
   .swatch { width: 10px; height: 10px; border-radius: 3px; }
   .legend .name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .legend .num { color: var(--muted); font-variant-numeric: tabular-nums; }
-  .years { display: flex; align-items: flex-end; gap: 8px; height: 170px; padding-top: 8px; }
-  .year { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; text-align: center; }
-  .year .bar { background: linear-gradient(180deg, #388bfd, #1f6feb); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .years { display: grid; gap: 5px; height: 180px; overflow-y: auto; align-content: start; padding-right: 4px; }
+  .year { display: grid; grid-template-columns: 44px 1fr 104px; align-items: center; gap: 8px; font-size: 12px; }
+  .year .ylab { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .year .track { height: 14px; background: #21262d; border-radius: 4px; overflow: hidden; }
+  .year .bar { height: 100%; background: linear-gradient(90deg, #1f6feb, #58a6ff); border-radius: 4px; min-width: 2px; }
   .year .bar:hover { filter: brightness(1.2); }
-  .year .ylab { color: var(--muted); font-size: 11px; margin-top: 6px; white-space: nowrap; }
-  .year .yval { color: var(--muted); font-size: 10px; }
+  .year .yval { color: var(--text); text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .year .yval .share { color: var(--muted); }
   .treemap-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .crumbs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
   .crumbs button { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 2px 4px; font: inherit; border-radius: 4px; }
@@ -110,6 +118,8 @@
   details.dup summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
   details.dup summary::-webkit-details-marker { display: none; }
   details.dup .dup-size { font-weight: 650; font-variant-numeric: tabular-nums; }
+  details.dup .dup-sample { flex: 1 1 120px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; color: var(--muted); }
   details.dup ul { margin: 8px 0 0; padding-left: 18px; }
   details.dup li { margin: 3px 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; word-break: break-all; }
   .empty { color: var(--muted); padding: 18px 4px; text-align: center; }
@@ -157,6 +167,7 @@
       <h2>Last modified</h2>
       <div class="caption">Bytes by year of last write. Old does not mean unused; it means worth reviewing.</div>
       <div class="years" id="years"></div>
+      <div class="small muted" id="years-note" style="margin-top:8px"></div>
     </div>
   </section>
 
@@ -211,7 +222,7 @@
   <section class="grid3" style="grid-template-columns:1.15fr 1fr">
     <div class="card">
       <h2>Duplicate candidates</h2>
-      <div class="caption">Grouped by exact byte size only. Same size is not same content: hash before deleting.</div>
+      <div class="caption">Grouped by exact byte size only. Same size is not same content: hash before deleting. Expand a group to see every path.</div>
       <div class="dups" id="dups"></div>
     </div>
     <div class="card">
@@ -263,6 +274,16 @@
     return e;
   }
   function pct(a, b) { return b > 0 ? (100 * a / b) : 0; }
+  function contrastText(hex) {
+    var c = hex.replace('#', '');
+    if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+    var v = [0, 2, 4].map(function (i) {
+      var x = parseInt(c.substr(i, 2), 16) / 255;
+      return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    });
+    var L = 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+    return L > 0.22 ? '#0d1117' : '#e6edf3';
+  }
   function toast(msg) {
     var t = $('toast');
     t.textContent = msg;
@@ -389,7 +410,8 @@
   });
 
   // --- years --------------------------------------------------------------
-  var years = (DATA.years || []).filter(function (y) { return y.bytes > 0; });
+  var years = (DATA.years || []).filter(function (y) { return y.bytes > 0; })
+    .sort(function (a, b) { return b.year - a.year; });
   var maxYear = Math.max.apply(null, years.map(function (y) { return y.bytes; }).concat([1]));
   var ybox = $('years');
   if (!years.length) {
@@ -398,13 +420,22 @@
     years.forEach(function (y) {
       var d = el('div', 'year');
       d.title = y.year + ': ' + fmtBytes(y.bytes) + ' in ' + fmtNum(y.files) + ' files';
-      d.appendChild(el('div', 'yval', fmtBytes(y.bytes)));
-      var bar = el('div', 'bar');
-      bar.style.height = Math.max(2, Math.round(100 * y.bytes / maxYear)) + '%';
-      d.appendChild(bar);
       d.appendChild(el('div', 'ylab', y.year));
+      var track = el('div', 'track');
+      var bar = el('div', 'bar');
+      bar.style.width = Math.max(0.5, 100 * y.bytes / maxYear) + '%';
+      track.appendChild(bar);
+      d.appendChild(track);
+      var val = el('div', 'yval', fmtBytes(y.bytes));
+      val.appendChild(el('span', 'share', ' · ' + pct(y.bytes, TOTAL).toFixed(1) + '%'));
+      d.appendChild(val);
       ybox.appendChild(d);
     });
+    var cutoff = new Date().getFullYear() - 2;
+    var oldBytes = years.reduce(function (s, y) { return s + (y.year < cutoff ? y.bytes : 0); }, 0);
+    $('years-note').textContent = oldBytes
+      ? fmtBytes(oldBytes) + ' · ' + pct(oldBytes, TOTAL).toFixed(1) + '% is 2+ years old (before ' + cutoff + ')'
+      : 'Everything was written in the last two years.';
   }
 
   // --- treemap ------------------------------------------------------------
@@ -495,7 +526,9 @@
       rect.setAttribute('x', r.x + 1); rect.setAttribute('y', r.y + 1);
       rect.setAttribute('width', Math.max(0, r.w - 2)); rect.setAttribute('height', Math.max(0, r.h - 2));
       rect.setAttribute('rx', 3);
-      rect.setAttribute('fill', n.virtual ? '#30363d' : PALETTE[(currentPath.length + idx) % PALETTE.length]);
+      var fill = n.virtual ? '#30363d' : PALETTE[(currentPath.length + idx) % PALETTE.length];
+      var ink = contrastText(fill);
+      rect.setAttribute('fill', fill);
       var title = document.createElementNS(NS, 'title');
       title.textContent = n.name + '\n' + fmtBytes(n.bytes) + ' · ' + pct(n.bytes, parentSize).toFixed(1) + '% of this view';
       rect.appendChild(title);
@@ -509,12 +542,15 @@
         var label = n.name.length > Math.floor(r.w / 7) ? n.name.slice(0, Math.max(4, Math.floor(r.w / 7) - 1)) + '…' : n.name;
         var tx = document.createElementNS(NS, 'text');
         tx.setAttribute('x', r.x + 7); tx.setAttribute('y', r.y + 17);
+        tx.setAttribute('fill', ink);
+        tx.setAttribute('font-weight', '600');
         tx.textContent = label;
         g.appendChild(tx);
         if (r.h > 42) {
           var t2 = document.createElementNS(NS, 'text');
           t2.setAttribute('x', r.x + 7); t2.setAttribute('y', r.y + 32);
-          t2.setAttribute('fill', '#c9d1d9'); t2.setAttribute('font-size', '10');
+          t2.setAttribute('fill', ink); t2.setAttribute('fill-opacity', '0.78');
+          t2.setAttribute('font-size', '10');
           t2.textContent = fmtBytes(n.bytes);
           g.appendChild(t2);
         }
@@ -675,12 +711,17 @@
   if (!dups.length) {
     dupBox.appendChild(el('div', 'empty', 'No same-size groups at or above the threshold.'));
   }
-  dups.slice(0, 300).forEach(function (g) {
+  dups.slice(0, 300).forEach(function (g, gi) {
     var d = el('details', 'dup');
+    if (gi === 0) d.open = true;
     var s = el('summary');
     s.appendChild(el('span', 'dup-size', fmtBytes(g.size)));
-    s.appendChild(el('span', 'muted small', '× ' + g.count + ' copies · up to ' + fmtBytes(g.wasted) + ' reclaimable'));
-    s.appendChild(el('span', 'spacer'));
+    s.appendChild(el('span', 'muted small', '× ' + g.count));
+    s.appendChild(el('span', 'muted small', fmtBytes(g.wasted) + ' reclaimable'));
+    var first = g.paths[0] || '';
+    var sample = el('span', 'dup-sample', first.length > 72 ? '…' + first.slice(-71) : first);
+    sample.title = first;
+    s.appendChild(sample);
     var copy = el('button', 'btn', 'Copy paths');
     copy.addEventListener('click', function (ev) {
       ev.preventDefault();

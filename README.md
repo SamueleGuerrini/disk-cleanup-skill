@@ -13,48 +13,23 @@
 </div>
 
 Not a "clean everything" button. It measures, explains, labels risk, and acts only
-on what you explicitly approve — one item at a time. Dry run is the default;
-`-Execute` is required for any change.
+on what you approve. Dry run is the default; `-Execute` is required for any change.
 
-> **Built for OpenCode on Windows.** The skill and the `/clean-disk` command target
-> OpenCode V2 on Windows 10/11. Other agents that read `SKILL.md` and run PowerShell
-> may work, but they are untested and not supported.
+> **Built for OpenCode on Windows.** Targets OpenCode V2 on Windows 10/11. Other
+> agents that read `SKILL.md` and run PowerShell may work, but they are untested
+> and unsupported.
 
-## Why
+## What it does
 
-Cleanup goes wrong in ways that are rarely obvious:
+| Stage | Result |
+|---|---|
+| **Audit** | Read-only HTML dashboard and JSON: click-through treemap, risk donut, file types, modification years, sortable large files, duplicate size candidates, junk/cache hotspots. |
+| **Plan** | Canonical paths, sizes, volume serials, and a SHA-256 per item. The executor rejects drift. |
+| **Move** | Reparse-safe copy, verify, stage, link, verify, log. `-Recover` finishes or rolls back an interrupted run. |
+| **Restore / purge** | Conflict-aware restore. Purge requires `-Execute` plus an exact confirmation, and refuses to destroy the last copy. |
 
-- a junction silently redirects a recursive delete into your profile
-- a path gets mangled across shells and a wildcard expands to something huge
-- a copy "succeeds" but skipped reparse points or online-only cloud files
-- a move is half-finished and nothing records where it stopped
-
-So: reparse-aware scanning and deletion, approval bound to a SHA-256 of the plan
-item, an append-only event log with explicit transaction states, conflict-aware
-restore, and a purge that refuses to destroy the last copy.
-
-## What you get
-
-**Look — read-only.** `scripts/audit.ps1` writes a self-contained HTML dashboard
-plus JSON: a click-through directory **treemap**, a **risk donut** (green / yellow
-/ orange / red / unrated), file-type and modification-year charts, a sortable
-**large-file table** with per-file risk tags and CSV export, **duplicate
-candidates** grouped by exact size, and known **junk/cache hotspots** — measured,
-never cleaned. Optional lock awareness via the Windows Restart Manager; it never
-terminates anything.
-
-Bounded memory, reparse-safe, cache-aware. 1-second sample mode, 30-second
-progressive results, hard time/file/memory limits, Ctrl+C checkpoints, SSD
-workers, incremental cache. No CDN, fonts, or analytics — it renders offline from
-`file://`.
-
-**Act — plan-bound.** `make-plan.ps1` records canonical paths, volume serials,
-sizes, exclusions and verification level; approval stores a SHA-256 of the item.
-`move-and-link.ps1` refuses drift, copies reparse-safely, verifies, stages the
-original, links, verifies again, and logs every event. `-Recover` finishes or
-rolls back an interrupted run. `restore-staged.ps1` offers `Abort` /
-`KeepTarget` / `Merge` / `OverwriteTarget`. `purge-staged.ps1` needs `-Execute`
-and an exact `-ConfirmPurge`, and refuses if the live target is missing.
+Bounded memory, incremental cache, 1-second sample, 30-second progressive mode,
+time/file/memory limits, Ctrl+C checkpoints. Renders offline from `file://`.
 
 ## Risk levels
 
@@ -66,7 +41,7 @@ and an exact `-ConfirmPurge`, and refuses if the live target is missing.
 | 🔴 | Protected system paths | **Never move or delete** |
 | ⚪ | No rule matched | Inspect; user-led |
 
-`unrated` is deliberately not green. An unrecognised folder is never guessed at.
+`unrated` is not green. An unrecognised folder is never guessed at.
 
 ## Quick start
 
@@ -86,10 +61,8 @@ Or run the installer directly:
 irm https://raw.githubusercontent.com/SamueleGuerrini/disk-cleanup-skill/main/install.ps1 | iex
 ```
 
-It installs `skills\disk-cleanup\` and `commands\clean-disk.md` under
-`%USERPROFILE%\.config\opencode`, then verifies both. No admin needed. From a
-checkout it links the checkout, so updates are live; `-Copy` makes a standalone
-copy, `-Force` replaces an existing install, `-Uninstall` removes it.
+Installs `skills\disk-cleanup\` and `commands\clean-disk.md` under
+`%USERPROFILE%\.config\opencode`, then verifies both. No admin needed.
 
 ### 2. Run `/clean-disk`
 
@@ -97,25 +70,25 @@ copy, `-Force` replaces an existing install, `-Uninstall` removes it.
 /clean-disk
 ```
 
-The agent loads the skill, **checks that the session is in plan mode**, and stops
-with a warning if it is not. It then asks which drive to look at and offers:
+The agent checks that the session is in plan mode, then offers:
 
-1. **Audit** — read-only HTML dashboard + JSON
-2. **Quick scan** — junctions, known folders, broken links
-3. **Plan a move** — a folder plus its destination drive
-4. **Verify** — PASS/FAIL for a manifest or existing links
-5. **Explain** — risk levels, the junk map, what is safe to remove
+| Choice | Action |
+|---|---|
+| Audit | Read-only dashboard and JSON |
+| Quick scan | Junctions, known folders, broken links |
+| Plan a move | Source folder and destination drive |
+| Verify | PASS/FAIL for a manifest or existing links |
+| Explain | Risk levels, junk map, safe removals |
 
-Pass a choice to skip the menu:
+Pass a choice directly:
 
 ```text
 /clean-disk audit C:
 ```
 
-### 3. Approve and execute — only when ready
+### 3. Execute (only when ready)
 
-Plan mode cannot move anything. After the audit, switch to a build agent and run
-the transaction from the installed skill:
+Plan mode cannot move anything. Switch to a build agent, then:
 
 ```powershell
 cd "$env:USERPROFILE\.config\opencode\skills\disk-cleanup"
@@ -151,22 +124,45 @@ cd disk-cleanup
 
 </details>
 
+## Update
+
+| Installed as | How to update |
+|---|---|
+| Checkout plus junction (default) | `git -C <checkout> pull`, then `.\install.ps1` to refresh the command copy |
+| Clone from the one-liner | Re-run the one-liner. It pulls the existing clone. |
+| `-Copy` install | `.\install.ps1 -Copy -Force` from an updated checkout |
+| Pinned tag | `git -C <checkout> fetch --tags`, `git -C <checkout> checkout <tag>`, then `.\install.ps1` |
+
+Check the installed commit:
+
+```powershell
+git -C "$env:USERPROFILE\.config\opencode\skills\disk-cleanup" log -1 --oneline
+```
+
+OpenCode reads the skill when a session starts, so start a new session after
+updating. Version pins are git tags; a junction install follows the checkout, so
+checking out a tag pins it.
+
 ## Requirements
 
-**OpenCode V2 on Windows 10/11** on NTFS (ReFS has limited junction support) ·
-PowerShell 7+ preferred, 5.1 works for most scripts · no admin for auditing or
+**OpenCode V2 on Windows 10/11**, NTFS (ReFS has limited junction support).
+PowerShell 7+ preferred; 5.1 works for most scripts. No admin for auditing or
 per-user moves; admin for restore points, VSS, and some system cleanup.
 
-The PowerShell scripts run on their own, without an agent. The skill and the
-`/clean-disk` command are OpenCode-specific; other agents were not tested.
+The scripts run without an agent. The skill and `/clean-disk` are OpenCode-specific.
 
 ## Safety
 
-A junction is **not** a backup. A restore point does **not** back up personal
-files. A `Rename`-staged move frees **no** space until purge. Prefer a fixed
-internal NTFS target — a junction into a removable or network drive breaks when
-the drive is absent or re-lettered. Never remove a junction with
-`Remove-Item -Recurse` or `rmdir /s`; delete the link only.
+A junction is not a backup. A restore point does not back up personal files. A
+`Rename`-staged move frees no space until purge. Prefer a fixed internal NTFS
+target; a junction to a removable or network drive breaks when it is absent or
+re-lettered. Never remove a junction with `Remove-Item -Recurse` or `rmdir /s`.
+
+Reparse-aware scanning and deletion, SHA-256 plan binding, an append-only event
+log, explicit transaction states, and conflict-aware restore cover the usual
+failure modes: a junction redirecting a recursive delete, a path mangled across
+shells, a copy that skipped reparse points or cloud placeholders, and a
+half-finished move with no record.
 
 ## Testing
 
@@ -189,7 +185,7 @@ pwsh -NoProfile -File .\run-tests.ps1
 | `references/SAFETY.md` | Path, junction, shell, cloud, ACL/ADS, incident lessons |
 | `references/CLASSIFICATION.md` | Risk mapping, tiers, proposal format |
 | `references/KNOWN-FOLDERS.md` | Junk/cache map, hotspots, leave-alone list |
-| `references/ROLLBACK.md` | Safety layers L1–L4, recovery, remediation |
+| `references/ROLLBACK.md` | Safety layers L1 to L4, recovery, remediation |
 | `references/POST-OPERATION.md` | Verification checklist and remediation |
 | `references/MANIFEST-TEMPLATE.md` | Markdown record + JSONL event schema |
 | `references/PLAN.md` | Plan schema, approval hash, drift checks |
@@ -198,13 +194,12 @@ pwsh -NoProfile -File .\run-tests.ps1
 | `references/TARGET-DRIVES.md` | SSD/HDD choice, HDD reliability, SMART, 3-2-1, CMR/SMR |
 | `references/DOCKER.md` | Docker Desktop VHDX relocation and warnings |
 | `references/TESTING.md` | Test suite and sandbox/VM options |
-| `examples/JUNCTION-RECORD.md` | Synthetic C: → E: junction migration |
+| `examples/JUNCTION-RECORD.md` | Synthetic C: to E: junction migration |
 | `examples/plan.example.json` | A complete approved plan item |
 
 </details>
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). This software moves and deletes files: you are
-responsible for reviewing every proposal and keeping a verified backup of anything
-you cannot afford to lose.
+MIT. See [`LICENSE`](LICENSE). This software moves and deletes files: review every
+proposal and keep a verified backup of anything you cannot afford to lose.
