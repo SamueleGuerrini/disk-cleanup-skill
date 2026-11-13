@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2129;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --orange: #db6d28;
+    --red: #f85149;
+    --grey: #6e7681;
+    --accent: #58a6ff;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 28px 24px 64px; }
+  header.top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; }
+  .eyebrow { color: var(--muted); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { margin: 4px 0 2px; font-size: 28px; line-height: 1.2; font-weight: 650; word-break: break-all; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+  .badge.warn { border-color: #9e6a03; color: #e3b341; }
+  .badge.ok { border-color: #238636; color: #56d364; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+  .kpi .label { color: var(--muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+  .kpi .value { font-size: 22px; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kpi .hint { color: var(--muted); font-size: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 1100px) { .grid3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+  .card h2 { margin: 0 0 4px; font-size: 14px; font-weight: 650; letter-spacing: .02em; }
+  .card .caption { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .donut-wrap { display: flex; gap: 18px; align-items: center; }
+  .donut { flex: 0 0 150px; width: 150px; height: 150px; }
+  .donut circle { transition: opacity .15s ease; }
+  .donut circle:hover { opacity: .78; }
+  .legend { flex: 1 1 auto; min-width: 0; display: grid; gap: 6px; }
+  .legend .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; }
+  .legend .name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .years { display: flex; align-items: flex-end; gap: 8px; height: 170px; padding-top: 8px; }
+  .year { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; text-align: center; }
+  .year .bar { background: linear-gradient(180deg, #388bfd, #1f6feb); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .year .bar:hover { filter: brightness(1.2); }
+  .year .ylab { color: var(--muted); font-size: 11px; margin-top: 6px; white-space: nowrap; }
+  .year .yval { color: var(--muted); font-size: 10px; }
+  .treemap-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .crumbs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+  .crumbs button { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 2px 4px; font: inherit; border-radius: 4px; }
+  .crumbs button:hover { background: #1f6feb22; }
+  .crumbs .sep { color: var(--muted); }
+  #treemap { width: 100%; height: auto; display: block; background: var(--panel-2); border-radius: 8px; }
+  #treemap rect { cursor: pointer; stroke: #0d1117; stroke-width: 1.5; }
+  #treemap rect:hover { filter: brightness(1.25); }
+  #treemap text { pointer-events: none; font-size: 11px; fill: #e6edf3; }
+  .tooltip { position: fixed; z-index: 20; pointer-events: none; background: #010409f2; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; max-width: 420px; display: none; box-shadow: 0 8px 24px #0008; }
+  .tooltip .t-name { font-weight: 600; word-break: break-all; }
+  .tooltip .t-meta { color: var(--muted); margin-top: 2px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .toolbar input[type="search"], .toolbar select {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; min-width: 180px;
+  }
+  .toolbar input[type="search"]:focus, .toolbar select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .toolbar label { color: var(--muted); font-size: 12px; display: inline-flex; gap: 6px; align-items: center; }
+  button.btn { background: #21262d; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  button.btn:hover { background: #30363d; }
+  button.btn.primary { background: #1f6feb; border-color: #1f6feb; }
+  button.btn.primary:hover { background: #388bfd; }
+  .spacer { flex: 1 1 auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  th button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit; }
+  th button:hover { color: var(--text); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.path { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: 12px; word-break: break-all; }
+  tr:hover td { background: #ffffff05; }
+  .chip { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+  .chip.green { color: var(--green); border-color: #238636; background: #23863618; }
+  .chip.yellow { color: var(--yellow); border-color: #9e6a03; background: #9e6a0318; }
+  .chip.orange { color: var(--orange); border-color: #bd561d; background: #bd561d18; }
+  .chip.red { color: var(--red); border-color: #da3633; background: #da363318; }
+  .chip.unrated { color: var(--grey); border-color: #484f58; background: #484f5818; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12px; }
+  .scroll { max-height: 520px; overflow: auto; border: 1px solid #21262d; border-radius: 8px; }
+  .scroll table { border-collapse: separate; border-spacing: 0; }
+  .scroll thead th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+  .dups { display: grid; gap: 8px; max-height: 520px; overflow: auto; }
+  details.dup { background: var(--panel-2); border: 1px solid #21262d; border-radius: 8px; padding: 8px 10px; }
+  details.dup summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
+  details.dup summary::-webkit-details-marker { display: none; }
+  details.dup .dup-size { font-weight: 650; font-variant-numeric: tabular-nums; }
+  details.dup ul { margin: 8px 0 0; padding-left: 18px; }
+  details.dup li { margin: 3px 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; word-break: break-all; }
+  .empty { color: var(--muted); padding: 18px 4px; text-align: center; }
+  .note { border-left: 3px solid var(--accent); background: #1f6feb12; padding: 8px 12px; border-radius: 0 8px 8px 0; color: #c9d1d9; font-size: 12px; }
+  .warnbox { border-left: 3px solid var(--orange); background: #bd561d12; padding: 8px 12px; border-radius: 0 8px 8px 0; color: #c9d1d9; font-size: 12px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 28px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .toast { position: fixed; right: 18px; bottom: 18px; background: #1f6feb; color: #fff; padding: 8px 14px; border-radius: 8px; opacity: 0; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; pointer-events: none; }
+  .toast.show { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Disk audit &middot; read-only</div>
+      <h1 id="title">__TITLE__</h1>
+      <div class="sub" id="subtitle"></div>
+    </div>
+    <div class="badges" id="badges"></div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid3">
+    <div class="card">
+      <h2>Risk distribution</h2>
+      <div class="caption">Bytes by default action. Grey means no rule matched: inspect, do not assume it is safe.</div>
+      <div class="donut-wrap">
+        <svg class="donut" id="risk-donut" viewBox="0 0 42 42" role="img" aria-label="Risk distribution by bytes"></svg>
+        <div class="legend" id="risk-legend"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>File types</h2>
+      <div class="caption">Bytes by extension. Hover a segment for details.</div>
+      <div class="donut-wrap">
+        <svg class="donut" id="ext-donut" viewBox="0 0 42 42" role="img" aria-label="File type distribution by bytes"></svg>
+        <div class="legend" id="ext-legend"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Last modified</h2>
+      <div class="caption">Bytes by year of last write. Old does not mean unused; it means worth reviewing.</div>
+      <div class="years" id="years"></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-bottom:20px">
+    <div class="treemap-head">
+      <div>
+        <h2 style="margin:0">Directory occupancy</h2>
+        <div class="caption" style="margin:2px 0 0">Click a block to drill down. Reparse points are not followed.</div>
+      </div>
+      <div class="crumbs" id="crumbs"></div>
+    </div>
+    <svg id="treemap" viewBox="0 0 1000 520" preserveAspectRatio="none" role="img" aria-label="Directory treemap"></svg>
+    <div class="small muted" id="treemap-note" style="margin-top:8px"></div>
+  </section>
+
+  <section class="card" style="margin-bottom:20px">
+    <h2>Large files</h2>
+    <div class="caption">Risk is a default policy, not a verdict. Red items are protected and must not be moved.</div>
+    <div class="toolbar">
+      <input type="search" id="file-search" placeholder="Filter path or extension" aria-label="Filter large files">
+      <select id="file-size" aria-label="Minimum size">
+        <option value="0">Any size</option>
+        <option value="104857600">≥ 100 MB</option>
+        <option value="1073741824">≥ 1 GB</option>
+        <option value="10737418240">≥ 10 GB</option>
+      </select>
+      <label><input type="checkbox" id="file-old"> untouched ≥ 2 years</label>
+      <label><input type="checkbox" id="file-locked"> locked only</label>
+      <span class="spacer"></span>
+      <span class="small muted" id="file-count"></span>
+      <button class="btn" id="file-copy">Copy selected</button>
+      <button class="btn" id="file-csv">CSV</button>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28px"><input type="checkbox" id="file-all" aria-label="Select all visible"></th>
+            <th><button data-sort="bytes">Size</button></th>
+            <th><button data-sort="age">Age</button></th>
+            <th><button data-sort="risk">Risk</button></th>
+            <th><button data-sort="path">Path</button></th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="file-rows"></tbody>
+      </table>
+    </div>
+    <div class="small muted" id="file-note" style="margin-top:8px"></div>
+  </section>
+
+  <section class="grid3" style="grid-template-columns:1.15fr 1fr">
+    <div class="card">
+      <h2>Duplicate candidates</h2>
+      <div class="caption">Grouped by exact byte size only. Same size is not same content: hash before deleting.</div>
+      <div class="dups" id="dups"></div>
+    </div>
+    <div class="card">
+      <h2>Known junk / cache / hotspots</h2>
+      <div class="caption">Measured, not cleaned. Protected locations stay protected.</div>
+      <div class="scroll" style="max-height:520px">
+        <table>
+          <thead><tr><th>Item</th><th>Size</th><th>Risk</th><th>Note</th></tr></thead>
+          <tbody id="known-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div id="footer-meta"></div>
+    <p class="note" style="margin-top:10px">This report is evidence, not an action. Nothing was deleted, moved or linked. Before deleting or relocating anything, review the item, keep a second copy, and use the skill's plan &rarr; execute &rarr; verify workflow.</p>
+  </footer>
+</div>
+
+<div class="tooltip" id="tooltip" role="status"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="report-data" type="application/json">__DATA__</script>
+<script>
+(function () {
+  'use strict';
+
+  var DATA = JSON.parse(document.getElementById('report-data').textContent);
+  var COLORS = {
+    green: '#3fb950', yellow: '#d29922', orange: '#db6d28', red: '#f85149', unrated: '#6e7681'
+  };
+  var PALETTE = ['#1f6feb', '#388bfd', '#2f81f7', '#58a6ff', '#79c0ff', '#a5d6ff', '#1158c7', '#0b4aa2', '#1b4f9c', '#3d5a80'];
+
+  function fmtBytes(n) {
+    if (!n || n < 0) return '0 B';
+    var u = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    var i = 0;
+    while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+    return (i === 0 ? n.toFixed(0) : n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2)) + ' ' + u[i];
+  }
+  function fmtNum(n) { return (n || 0).toLocaleString(); }
+  function esc(s) { return String(s == null ? '' : s); }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function pct(a, b) { return b > 0 ? (100 * a / b) : 0; }
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+
+  var META = DATA.meta || {};
+  var TOTAL = META.bytes || 0;
+
+  // --- header -------------------------------------------------------------
+  document.title = 'Disk audit ' + DATA.root;
+  $('title').textContent = DATA.root;
+  var vol = DATA.volume || {};
+  $('subtitle').textContent = [
+    vol.FileSystem, vol.DriveType, vol.Serial ? ('serial ' + vol.Serial) : null,
+    vol.SizeBytes ? (fmtBytes(vol.SizeBytes) + ' volume') : null
+  ].filter(Boolean).join(' · ');
+
+  var badges = $('badges');
+  function badge(text, cls) { badges.appendChild(el('span', 'badge' + (cls ? ' ' + cls : ''), text)); }
+  badge(fmtNum(META.files) + ' files');
+  badge(fmtNum(META.dirs) + ' directories');
+  badge(META.elapsed_seconds + 's scan');
+  if (META.media) badge(META.media);
+  if (META.workers > 1) badge(META.workers + ' workers');
+  if (META.sampled) badge('sample / estimate', 'warn');
+  if (META.partial) badge('partial: ' + (META.partial_reason || 'limit reached'), 'warn');
+  else badge('complete', 'ok');
+  if (META.cache_hits > 0) badge(fmtNum(META.cache_hits) + ' cached dirs');
+
+  // --- kpis ---------------------------------------------------------------
+  var kpis = $('kpis');
+  function kpi(label, value, hint) {
+    var d = el('div', 'kpi');
+    d.appendChild(el('div', 'label', label));
+    d.appendChild(el('div', 'value', value));
+    if (hint) d.appendChild(el('div', 'hint', hint));
+    kpis.appendChild(d);
+  }
+  var used = (vol.SizeBytes || 0) - (vol.FreeBytes || 0);
+  kpi('Scanned', fmtBytes(TOTAL), fmtNum(META.files) + ' files');
+  kpi('Volume used', fmtBytes(used), fmtBytes(vol.FreeBytes || 0) + ' free');
+  kpi('Average file', META.files ? fmtBytes(TOTAL / META.files) : '—');
+  kpi('Unreadable', fmtNum(META.errors), META.errors ? 'entries skipped' : 'none');
+  if (META.allocated && META.allocated !== TOTAL) kpi('Allocated', fmtBytes(META.allocated), 'sparse/compressed aware');
+
+  // --- donut helper -------------------------------------------------------
+  function donut(svg, parts, centerLabel, centerValue) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var NS = 'http://www.w3.org/2000/svg';
+    var total = parts.reduce(function (s, p) { return s + p.value; }, 0);
+    var r = 15.9155, c = 2 * Math.PI * r, offset = 25;
+    var bg = document.createElementNS(NS, 'circle');
+    bg.setAttribute('cx', 21); bg.setAttribute('cy', 21); bg.setAttribute('r', r);
+    bg.setAttribute('fill', 'none'); bg.setAttribute('stroke', '#21262d'); bg.setAttribute('stroke-width', 6);
+    svg.appendChild(bg);
+    if (total > 0) {
+      parts.forEach(function (p) {
+        if (p.value <= 0) return;
+        var seg = document.createElementNS(NS, 'circle');
+        var len = (p.value / total) * c;
+        seg.setAttribute('cx', 21); seg.setAttribute('cy', 21); seg.setAttribute('r', r);
+        seg.setAttribute('fill', 'none');
+        seg.setAttribute('stroke', p.color);
+        seg.setAttribute('stroke-width', 6);
+        seg.setAttribute('stroke-dasharray', len + ' ' + (c - len));
+        seg.setAttribute('stroke-dashoffset', offset);
+        seg.setAttribute('transform', 'rotate(-90 21 21)');
+        var title = document.createElementNS(NS, 'title');
+        title.textContent = p.name + ': ' + fmtBytes(p.value) + ' (' + pct(p.value, total).toFixed(1) + '%)';
+        seg.appendChild(title);
+        svg.appendChild(seg);
+        offset -= len;
+      });
+    }
+    var t1 = document.createElementNS(NS, 'text');
+    t1.setAttribute('x', 21); t1.setAttribute('y', 20); t1.setAttribute('text-anchor', 'middle');
+    t1.setAttribute('fill', '#e6edf3'); t1.setAttribute('font-size', 4.2); t1.setAttribute('font-weight', 700);
+    t1.textContent = centerValue;
+    svg.appendChild(t1);
+    var t2 = document.createElementNS(NS, 'text');
+    t2.setAttribute('x', 21); t2.setAttribute('y', 25); t2.setAttribute('text-anchor', 'middle');
+    t2.setAttribute('fill', '#8b949e'); t2.setAttribute('font-size', 2.6);
+    t2.textContent = centerLabel;
+    svg.appendChild(t2);
+  }
+
+  // --- risk ---------------------------------------------------------------
+  var riskParts = (DATA.risk || []).map(function (r) {
+    return { name: r.level, value: r.bytes, files: r.files, color: COLORS[r.level] || COLORS.unrated, action: r.action };
+  });
+  donut($('risk-donut'), riskParts, 'scanned', fmtBytes(TOTAL));
+  var rl = $('risk-legend');
+  riskParts.slice().sort(function (a, b) { return b.value - a.value; }).forEach(function (p) {
+    var row = el('div', 'row');
+    var sw = el('span', 'swatch'); sw.style.background = p.color;
+    row.appendChild(sw);
+    var name = el('span', 'name', p.name);
+    name.title = p.action;
+    row.appendChild(name);
+    row.appendChild(el('span', 'num', fmtBytes(p.value) + ' · ' + pct(p.value, TOTAL).toFixed(1) + '%'));
+    rl.appendChild(row);
+  });
+
+  // --- extensions ---------------------------------------------------------
+  var extData = (DATA.ext || []).slice();
+  var extTop = extData.slice(0, 9);
+  var extRest = extData.slice(9).reduce(function (s, e) { return s + e.bytes; }, 0);
+  var extParts = extTop.map(function (e, i) {
+    return { name: e.ext, value: e.bytes, color: PALETTE[i % PALETTE.length] };
+  });
+  if (extRest > 0) extParts.push({ name: 'other', value: extRest, color: '#484f58' });
+  donut($('ext-donut'), extParts, 'types', fmtNum(extData.length));
+  var xl = $('ext-legend');
+  extParts.forEach(function (p) {
+    var row = el('div', 'row');
+    var sw = el('span', 'swatch'); sw.style.background = p.color;
+    row.appendChild(sw);
+    row.appendChild(el('span', 'name', p.name));
+    row.appendChild(el('span', 'num', fmtBytes(p.value)));
+    xl.appendChild(row);
+  });
+
+  // --- years --------------------------------------------------------------
+  var years = (DATA.years || []).filter(function (y) { return y.bytes > 0; });
+  var maxYear = Math.max.apply(null, years.map(function (y) { return y.bytes; }).concat([1]));
+  var ybox = $('years');
+  if (!years.length) {
+    ybox.appendChild(el('div', 'empty', 'No timestamp data.'));
+  } else {
+    years.forEach(function (y) {
+      var d = el('div', 'year');
+      d.title = y.year + ': ' + fmtBytes(y.bytes) + ' in ' + fmtNum(y.files) + ' files';
+      d.appendChild(el('div', 'yval', fmtBytes(y.bytes)));
+      var bar = el('div', 'bar');
+      bar.style.height = Math.max(2, Math.round(100 * y.bytes / maxYear)) + '%';
+      d.appendChild(bar);
+      d.appendChild(el('div', 'ylab', y.year));
+      ybox.appendChild(d);
+    });
+  }
+
+  // --- treemap ------------------------------------------------------------
+  var nodes = (DATA.tree || []).slice();
+  var byPath = Object.create(null);
+  nodes.forEach(function (n) { byPath[n.path] = n; });
+  var rootNode = byPath[''] || { path: '', name: DATA.root, bytes: TOTAL, files: META.files, parent: '' };
+  var childrenOf = Object.create(null);
+  nodes.forEach(function (n) {
+    if (n.path === '') return;
+    var p = n.parent || '';
+    (childrenOf[p] || (childrenOf[p] = [])).push(n);
+  });
+
+  var currentPath = '';
+  var svg = $('treemap');
+
+  function squarify(items, x, y, w, h, out) {
+    items = items.filter(function (n) { return n.bytes > 0; }).sort(function (a, b) { return b.bytes - a.bytes; });
+    if (!items.length || w <= 0 || h <= 0) return;
+    var total = items.reduce(function (s, n) { return s + n.bytes; }, 0);
+    var scale = (w * h) / total;
+    var queue = items.map(function (n) { return { n: n, area: n.bytes * scale }; });
+    var cx = x, cy = y, cw = w, ch = h;
+    var guard = 0;
+    while (queue.length && guard++ < 10000) {
+      var short = Math.min(cw, ch);
+      var row = [queue[0]];
+      var rowArea = queue[0].area;
+      var i = 1;
+      while (i < queue.length) {
+        var cand = row.concat([queue[i]]);
+        var candArea = rowArea + queue[i].area;
+        if (worst(cand, candArea, short) <= worst(row, rowArea, short)) {
+          row = cand; rowArea = candArea; i++;
+        } else break;
+      }
+      if (cw >= ch) {
+        var rw = rowArea / ch;
+        var yy = cy;
+        row.forEach(function (it) {
+          var ih = it.area / rw;
+          out.push({ n: it.n, x: cx, y: yy, w: rw, h: ih });
+          yy += ih;
+        });
+        cx += rw; cw -= rw;
+      } else {
+        var rh = rowArea / cw;
+        var xx = cx;
+        row.forEach(function (it) {
+          var iw = it.area / rh;
+          out.push({ n: it.n, x: xx, y: cy, w: iw, h: rh });
+          xx += iw;
+        });
+        cy += rh; ch -= rh;
+      }
+      queue = queue.slice(row.length);
+      if (cw < 0.5 || ch < 0.5) break;
+    }
+  }
+  function worst(row, sum, short) {
+    var max = 0, min = Infinity;
+    row.forEach(function (r) { if (r.area > max) max = r.area; if (r.area < min) min = r.area; });
+    if (!sum || !min || !isFinite(min)) return Infinity;
+    return Math.max((short * short * max) / (sum * sum), (sum * sum) / (short * short * min));
+  }
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function renderTreemap() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var cur = byPath[currentPath] || rootNode;
+    var kids = (childrenOf[currentPath] || []).slice();
+    var childSum = kids.reduce(function (s, k) { return s + k.bytes; }, 0);
+    var direct = Math.max(0, cur.bytes - childSum);
+    var items = kids.slice();
+    if (direct > 0) {
+      items.push({ path: currentPath + '::files', name: '(files in this folder)', bytes: direct, files: cur.files, virtual: true });
+    }
+    items.sort(function (a, b) { return b.bytes - a.bytes; });
+
+    var rects = [];
+    squarify(items, 0, 0, 1000, 520, rects);
+    var parentSize = cur.bytes || 1;
+    rects.forEach(function (r, idx) {
+      var n = r.n;
+      var g = document.createElementNS(NS, 'g');
+      var rect = document.createElementNS(NS, 'rect');
+      rect.setAttribute('x', r.x + 1); rect.setAttribute('y', r.y + 1);
+      rect.setAttribute('width', Math.max(0, r.w - 2)); rect.setAttribute('height', Math.max(0, r.h - 2));
+      rect.setAttribute('rx', 3);
+      rect.setAttribute('fill', n.virtual ? '#30363d' : PALETTE[(currentPath.length + idx) % PALETTE.length]);
+      var title = document.createElementNS(NS, 'title');
+      title.textContent = n.name + '\n' + fmtBytes(n.bytes) + ' · ' + pct(n.bytes, parentSize).toFixed(1) + '% of this view';
+      rect.appendChild(title);
+      rect.addEventListener('mousemove', function (ev) { showTip(ev, n, parentSize); });
+      rect.addEventListener('mouseleave', hideTip);
+      if (!n.virtual) {
+        rect.addEventListener('click', function () { currentPath = n.path; renderTreemap(); renderCrumbs(); });
+      }
+      g.appendChild(rect);
+      if (r.w > 92 && r.h > 26) {
+        var label = n.name.length > Math.floor(r.w / 7) ? n.name.slice(0, Math.max(4, Math.floor(r.w / 7) - 1)) + '…' : n.name;
+        var tx = document.createElementNS(NS, 'text');
+        tx.setAttribute('x', r.x + 7); tx.setAttribute('y', r.y + 17);
+        tx.textContent = label;
+        g.appendChild(tx);
+        if (r.h > 42) {
+          var t2 = document.createElementNS(NS, 'text');
+          t2.setAttribute('x', r.x + 7); t2.setAttribute('y', r.y + 32);
+          t2.setAttribute('fill', '#c9d1d9'); t2.setAttribute('font-size', '10');
+          t2.textContent = fmtBytes(n.bytes);
+          g.appendChild(t2);
+        }
+      }
+      svg.appendChild(g);
+    });
+
+    $('treemap-note').textContent = fmtBytes(cur.bytes) + ' in this view · ' + fmtNum(cur.files) +
+      ' files directly here · ' + kids.length + ' subdirectories' +
+      (META.tree_truncated ? ' · tree truncated to the largest directories' : '');
+  }
+
+  function renderCrumbs() {
+    var box = $('crumbs');
+    while (box.firstChild) box.removeChild(box.firstChild);
+    var parts = currentPath ? currentPath.split('\\') : [];
+    var acc = '';
+    var rootBtn = el('button', null, DATA.root);
+    rootBtn.addEventListener('click', function () { currentPath = ''; renderTreemap(); renderCrumbs(); });
+    box.appendChild(rootBtn);
+    parts.forEach(function (p) {
+      box.appendChild(el('span', 'sep', '›'));
+      acc = acc ? acc + '\\' + p : p;
+      var target = acc;
+      var b = el('button', null, p);
+      b.addEventListener('click', function () { currentPath = target; renderTreemap(); renderCrumbs(); });
+      box.appendChild(b);
+    });
+  }
+
+  var tip = $('tooltip');
+  function showTip(ev, n, parentSize) {
+    tip.textContent = '';
+    tip.appendChild(el('div', 't-name', n.name));
+    tip.appendChild(el('div', 't-meta', fmtBytes(n.bytes) + ' · ' + pct(n.bytes, parentSize).toFixed(1) + '% of view · ' + fmtNum(n.files) + ' files'));
+    tip.style.display = 'block';
+    var x = Math.min(ev.clientX + 14, window.innerWidth - 440);
+    var y = Math.min(ev.clientY + 14, window.innerHeight - 90);
+    tip.style.left = Math.max(8, x) + 'px';
+    tip.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tip.style.display = 'none'; }
+
+  renderTreemap();
+  renderCrumbs();
+
+  // --- large files --------------------------------------------------------
+  var files = (DATA.large || []).slice();
+  var now = Date.now();
+  files.forEach(function (f) {
+    var t = f.last_write ? Date.parse(f.last_write) : NaN;
+    f._ageDays = isNaN(t) ? null : (now - t) / 86400000;
+  });
+
+  var sortKey = 'bytes', sortDir = -1;
+  var selected = Object.create(null);
+  var visible = [];
+
+  function riskChip(level) {
+    return el('span', 'chip ' + (COLORS[level] ? level : 'unrated'), level);
+  }
+  function ageText(days) {
+    if (days == null) return '—';
+    if (days < 1) return 'today';
+    if (days < 365) return Math.round(days) + 'd';
+    return (days / 365).toFixed(1) + 'y';
+  }
+
+  function renderFiles() {
+    var q = $('file-search').value.trim().toLowerCase();
+    var minSize = parseInt($('file-size').value, 10) || 0;
+    var oldOnly = $('file-old').checked;
+    var lockedOnly = $('file-locked').checked;
+
+    visible = files.filter(function (f) {
+      if (f.bytes < minSize) return false;
+      if (oldOnly && (f._ageDays == null || f._ageDays < 730)) return false;
+      if (lockedOnly && !f.locked) return false;
+      if (q && f.path.toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    visible.sort(function (a, b) {
+      var va = sortKey === 'age' ? (a._ageDays == null ? -1 : a._ageDays) : a[sortKey];
+      var vb = sortKey === 'age' ? (b._ageDays == null ? -1 : b._ageDays) : b[sortKey];
+      if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+      return sortDir * (va - vb);
+    });
+
+    var body = $('file-rows');
+    while (body.firstChild) body.removeChild(body.firstChild);
+    if (!visible.length) {
+      var tr = el('tr'); var td = el('td', 'empty', 'No file matches these filters.');
+      td.colSpan = 6; tr.appendChild(td); body.appendChild(tr);
+    }
+    visible.forEach(function (f) {
+      var tr = el('tr');
+      var td0 = el('td');
+      var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!selected[f.path];
+      cb.setAttribute('aria-label', 'Select ' + f.path);
+      cb.addEventListener('change', function () {
+        if (cb.checked) selected[f.path] = true; else delete selected[f.path];
+        updateFileCount();
+      });
+      td0.appendChild(cb); tr.appendChild(td0);
+
+      var td1 = el('td', 'num', fmtBytes(f.bytes)); tr.appendChild(td1);
+      var td2 = el('td', 'num', ageText(f._ageDays)); tr.appendChild(td2);
+      var td3 = el('td'); td3.appendChild(riskChip(f.risk)); tr.appendChild(td3);
+      var td4 = el('td', 'path', f.path); tr.appendChild(td4);
+      var td5 = el('td', 'small muted');
+      td5.textContent = f.locked ? ('locked by ' + ((f.lockers || []).join(', ') || 'a process')) : (f.action || '');
+      tr.appendChild(td5);
+      body.appendChild(tr);
+    });
+    updateFileCount();
+    $('file-all').checked = visible.length > 0 && visible.every(function (f) { return selected[f.path]; });
+    $('file-note').textContent = 'Showing ' + visible.length + ' of ' + files.length +
+      ' tracked files (the largest ' + files.length + '). Nothing is selected automatically.';
+  }
+  function updateFileCount() {
+    var n = Object.keys(selected).length;
+    $('file-count').textContent = n + ' selected';
+  }
+
+  document.querySelectorAll('th button[data-sort]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.getAttribute('data-sort');
+      if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'path' ? 1 : -1; }
+      renderFiles();
+    });
+  });
+  ['file-search', 'file-size', 'file-old', 'file-locked'].forEach(function (id) {
+    $(id).addEventListener('input', renderFiles);
+    $(id).addEventListener('change', renderFiles);
+  });
+  $('file-all').addEventListener('change', function () {
+    var on = $('file-all').checked;
+    visible.forEach(function (f) { if (on) selected[f.path] = true; else delete selected[f.path]; });
+    renderFiles();
+  });
+  $('file-copy').addEventListener('click', function () {
+    var paths = Object.keys(selected);
+    if (!paths.length) { toast('Nothing selected'); return; }
+    copyText(paths.join('\r\n')).then(function () { toast('Copied ' + paths.length + ' path(s)'); });
+  });
+  $('file-csv').addEventListener('click', function () {
+    var rows = [['bytes', 'age_days', 'risk', 'locked', 'path']];
+    visible.forEach(function (f) { rows.push([f.bytes, f._ageDays == null ? '' : Math.round(f._ageDays), f.risk, f.locked ? 'yes' : '', f.path]); });
+    var csv = rows.map(function (r) {
+      return r.map(function (c) { var s = String(c); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',');
+    }).join('\r\n');
+    download('large-files.csv', csv, 'text/csv');
+  });
+
+  // --- duplicates ---------------------------------------------------------
+  var dups = (DATA.dups || []).slice();
+  var dupBox = $('dups');
+  if (!dups.length) {
+    dupBox.appendChild(el('div', 'empty', 'No same-size groups at or above the threshold.'));
+  }
+  dups.slice(0, 300).forEach(function (g) {
+    var d = el('details', 'dup');
+    var s = el('summary');
+    s.appendChild(el('span', 'dup-size', fmtBytes(g.size)));
+    s.appendChild(el('span', 'muted small', '× ' + g.count + ' copies · up to ' + fmtBytes(g.wasted) + ' reclaimable'));
+    s.appendChild(el('span', 'spacer'));
+    var copy = el('button', 'btn', 'Copy paths');
+    copy.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      copyText(g.paths.join('\r\n')).then(function () { toast('Copied ' + g.paths.length + ' path(s)'); });
+    });
+    s.appendChild(copy);
+    d.appendChild(s);
+    var ul = el('ul');
+    g.paths.forEach(function (p) { ul.appendChild(el('li', null, p)); });
+    if (g.count > g.paths.length) ul.appendChild(el('li', 'muted', '… and ' + (g.count - g.paths.length) + ' more'));
+    d.appendChild(ul);
+    dupBox.appendChild(d);
+  });
+  if (dups.length > 300) dupBox.appendChild(el('div', 'muted small', 'Showing the 300 largest groups of ' + dups.length + '.'));
+  if (META.dup_truncated) dupBox.appendChild(el('div', 'warnbox', 'Duplicate tracking hit its group limit; some groups are missing from this report.'));
+
+  // --- known folders ------------------------------------------------------
+  var knownBody = $('known-rows');
+  (DATA.known || []).forEach(function (k) {
+    var tr = el('tr');
+    tr.appendChild(el('td', null, k.item));
+    tr.appendChild(el('td', 'num', fmtBytes(k.bytes)));
+    var td = el('td'); td.appendChild(riskChip(k.level)); tr.appendChild(td);
+    var note = el('td', 'small muted', k.note);
+    note.title = k.path;
+    tr.appendChild(note);
+    knownBody.appendChild(tr);
+  });
+  if (!knownBody.firstChild) {
+    var tr2 = el('tr'); var td2 = el('td', 'empty', 'No known location found on this volume.');
+    td2.colSpan = 4; tr2.appendChild(td2); knownBody.appendChild(tr2);
+  }
+
+  // --- helpers ------------------------------------------------------------
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  function download(name, text, mime) {
+    var blob = new Blob([text], { type: mime + ';charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  $('footer-meta').textContent = 'Generated ' + new Date().toLocaleString() +
+    ' · tool ' + (DATA.tool || 'disk-cleanup') + ' · schema ' + (DATA.schema || 1) +
+    ' · scan started ' + (META.started || '?') +
+    (META.partial ? ' · PARTIAL RESULT' : '');
+
+  renderFiles();
+})();
+</script>
+</body>
+</html>

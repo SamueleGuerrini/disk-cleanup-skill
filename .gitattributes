@@ -1,0 +1,23 @@
+# Normalize text to LF in the repository and in the working tree. PowerShell 5.1
+# and 7 both read LF scripts correctly, and LF keeps diffs stable across platforms.
+* text=auto eol=lf
+
+*.ps1   text eol=lf
+*.psm1  text eol=lf
+*.psd1  text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.jsonl text eol=lf
+*.html  text eol=lf
+*.wsb   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.txt   text eol=lf
+
+# Binary assets, if any are added later.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.zip   binary
+*.gz    binary

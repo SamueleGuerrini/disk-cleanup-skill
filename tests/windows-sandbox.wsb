@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Windows Sandbox template for the disk-cleanup test suite.
+
+  Before use:
+    1. Enable the feature (admin, then reboot):
+         Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All
+    2. Replace HOST_REPO with the absolute path of this repository.
+    3. Replace HOST_RESULTS with an empty absolute folder for the test output.
+    4. Launch:  WindowsSandbox.exe .\windows-sandbox.wsb
+
+  The repository is mapped read-only; the suite only writes to the sandbox's own
+  %TEMP% and to C:\results (the mapped results folder).
+
+  Windows Sandbox has Windows PowerShell 5.1 only. The suite falls back to it,
+  but PowerShell 7 inside the sandbox is preferable if you install it first.
+-->
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>HOST_REPO</HostFolder>
+      <SandboxFolder>C:\repo</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+    <MappedFolder>
+      <HostFolder>HOST_RESULTS</HostFolder>
+      <SandboxFolder>C:\results</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process powershell.exe -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\repo\tests\run-tests.ps1' -Wait -PassThru -RedirectStandardOutput 'C:\results\test-output.txt' -RedirectStandardError 'C:\results\test-error.txt'; ('exit=' + $p.ExitCode) | Set-Content -LiteralPath 'C:\results\exit.txt'"</Command>
+  </LogonCommand>
+</Configuration>

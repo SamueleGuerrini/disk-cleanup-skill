@@ -1,0 +1,38 @@
+# Audit output
+reports/
+*.report.json
+audit-*.json
+audit-*.html
+
+# Plans and manifests contain machine-specific paths and volume serials.
+# Never commit them.
+plan.json
+*.plan.json
+manifest.jsonl
+*.manifest.jsonl
+_AI_Rollback/
+
+# Test artifacts
+# Machine-specific sandbox configs (real host paths) stay local.
+tests/*.local.wsb
+tests/out/
+tests/output/
+test-output.txt
+exit.txt
+*.sandbox.log
+
+# PowerShell
+*.ps1xml
+*.pssc
+*.psrc
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Python venvs (only if someone adds helper tooling)
+.venv/
+__pycache__/
