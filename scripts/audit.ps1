@@ -61,7 +61,9 @@
   Time-box the scan to 30 seconds and keep partial results.
 
 .PARAMETER TimeLimitSeconds
-  Hard time limit. 0 = unlimited. Default: 300 on a volume root, 0 on a folder.
+  Hard time limit. 0 = unlimited. Default: 600 on a volume root, 0 on a folder.
+  Large or slow volumes may need more; a partial report is still written when the
+  limit is reached.
 
 .PARAMETER MaxFiles
   Stop after this many files. 0 = unlimited.
@@ -176,7 +178,7 @@ if (-not $vol) { throw "Cannot read volume information for $root" }
 $isVolumeRoot = ($root.TrimEnd('\').Length -eq 2)
 if ($TimeLimitSeconds -lt 0) {
   if ($Progressive) { $TimeLimitSeconds = 30 }
-  elseif ($isVolumeRoot) { $TimeLimitSeconds = 300 }
+  elseif ($isVolumeRoot) { $TimeLimitSeconds = 600 }
   else { $TimeLimitSeconds = 0 }
 }
 if ($Progressive -and $TimeLimitSeconds -eq 0) { $TimeLimitSeconds = 30 }

@@ -91,7 +91,7 @@ Groups are built from **exact byte size only**. The report labels them
 | `-Workers` | 0 = auto | 1 on HDD/removable/network/unknown; up to 4 on SSD |
 | `-SampleSeconds` | 0 | Sample window, then extrapolate full-scan time |
 | `-Progressive` | off | Time-box to 30 s and keep partial results |
-| `-TimeLimitSeconds` | 300 on a volume root, 0 on a folder | Hard stop |
+| `-TimeLimitSeconds` | 600 on a volume root, 0 on a folder | Hard stop; a partial report is still written |
 | `-MaxFiles` | 0 | Hard stop after N files |
 | `-MemoryLimitMB` | 0 = 70% of free RAM | Hard stop on managed-memory use |
 | `-CacheMaxAgeHours` | 24 | Reuse directory snapshots younger than this |
@@ -162,6 +162,12 @@ number of files, so a multi-million-file volume can be scanned.
 ```powershell
 .\scripts\report.ps1 -InputJson '<checkpoint>.json'
 ```
+
+- With `-Workers` greater than 1, an interrupt can leave a checkpoint that holds
+  only root-level totals: worker partitions are merged as each one finishes, and
+  Ctrl+C does not wait for them. Use `-Workers 1` when you need an interruptible
+  checkpoint with full detail. A time limit is different — workers return their
+  partial state, so the report is complete up to the limit.
 
 The HTML always shows a `partial` badge with the reason when the result is
 incomplete.
